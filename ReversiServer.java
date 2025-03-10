@@ -303,14 +303,24 @@ public class ReversiServer {
 
         private void handlePlayAgain() {
             if (currentRoom == null) return;
+            
+            // Kiểm tra xem người chơi đã gửi yêu cầu chơi lại chưa
+            if ((playerId == 1 && currentRoom.replayPlayer1) ||
+                (playerId == 2 && currentRoom.replayPlayer2)) {
+                return; // Không cần gửi lại nếu đã được đánh dấu
+            }
+            
+            // Đánh dấu người chơi hiện tại đã gửi yêu cầu chơi lại
             if (playerId == 1) currentRoom.replayPlayer1 = true;
             else if (playerId == 2) currentRoom.replayPlayer2 = true;
-            // Gửi yêu cầu chơi lại tới đối thủ
+            
+            // Gửi thông báo PLAY_AGAIN_REQUEST tới đối thủ
             for (ClientHandler p : currentRoom.players) {
                 if (p != this) {
                     p.out.println("PLAY_AGAIN_REQUEST");
                 }
             }
+            
             // Nếu cả hai đồng ý, reset bàn cờ và bắt đầu game mới
             if (currentRoom.replayPlayer1 && currentRoom.replayPlayer2) {
                 currentRoom.resetBoard();
@@ -327,11 +337,12 @@ public class ReversiServer {
                     }
                     p.out.println("BOARD_STATE:" + sb.toString());
                 }
+                // Reset cờ replay sau khi bắt đầu game mới
                 currentRoom.replayPlayer1 = false;
                 currentRoom.replayPlayer2 = false;
             }
         }
-
+        
         private void handleExit() {
             if (currentRoom != null) {
                 for (ClientHandler p : currentRoom.players) {
