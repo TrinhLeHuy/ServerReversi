@@ -230,8 +230,8 @@ public class ReversiServer {
                 }
             }
             String result;
-            if (count1 > count2) result = "WIN:1";
-            else if (count2 > count1) result = "WIN:2";
+            if (count1 > count2) result = "WIN:1 win";
+            else if (count2 > count1) result = "WIN:2 win";
             else result = "WIN:TIE";
             for (ClientHandler p : currentRoom.players) {
                 p.out.println(result);
@@ -315,11 +315,11 @@ public class ReversiServer {
             else if (playerId == 2) currentRoom.replayPlayer2 = true;
             
             // Gửi thông báo PLAY_AGAIN_REQUEST tới đối thủ
-            for (ClientHandler p : currentRoom.players) {
-                if (p != this) {
-                    p.out.println("PLAY_AGAIN_REQUEST");
-                }
-            }
+            for (ClientHandler p : currentRoom.players) {  
+                if (p != this && !((playerId == 1 && currentRoom.replayPlayer2) || (playerId == 2 && currentRoom.replayPlayer1))) {  
+                    p.out.println("PLAY_AGAIN_REQUEST");  
+                }  
+            }            
             
             // Nếu cả hai đồng ý, reset bàn cờ và bắt đầu game mới
             if (currentRoom.replayPlayer1 && currentRoom.replayPlayer2) {
@@ -342,6 +342,18 @@ public class ReversiServer {
                 currentRoom.replayPlayer2 = false;
             }
         }
+        private void handlePlayAgainReject() {
+            if (currentRoom == null) return;
+        
+            // Gửi thông báo EXIT_TO_MENU cho cả hai người chơi
+            for (ClientHandler p : currentRoom.players) {
+                p.out.println("EXIT_TO_MENU");
+            }
+        
+            // Xóa phòng chơi hiện tại
+            rooms.remove(currentRoom.roomId);
+        }
+        
         
         private void handleExit() {
             if (currentRoom != null) {
