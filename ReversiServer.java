@@ -1,15 +1,16 @@
-
 import java.io.*;
 import java.net.*;
 import java.util.*;
 
 public class ReversiServer {
     private static final int PORT = 5000;
+    private ServerSocket serverSocket;
     // Quản lý các phòng bằng roomId
     private static Map<String, Room> rooms = new HashMap<>();
+    
 
     public static void main(String[] args) {
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+        try (ServerSocket serverSocket = new ServerSocket(PORT, 50, InetAddress.getByName("0.0.0.0"))) {
             System.out.println("Server Reversi chạy trên cổng " + PORT);
             while (true) {
                 Socket socket = serverSocket.accept();
@@ -50,7 +51,7 @@ public class ReversiServer {
         boolean isFull() {
             return players.size() == 2;
         }
-        
+
         synchronized void changeTurn() {
             currentTurn = (currentTurn == 1) ? 2 : 1;
         }
@@ -113,6 +114,9 @@ public class ReversiServer {
                             break;
                         case "EXIT":
                             handleExit();
+                            break;
+                        case "RETURN_MENU":
+                            handleReturnMenu();
                             break;
                         case "LIST":
                             listRooms();
@@ -225,14 +229,19 @@ public class ReversiServer {
             int count1 = 0, count2 = 0;
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
-                    if (currentRoom.board[i][j] == 1) count1++;
-                    if (currentRoom.board[i][j] == 2) count2++;
+                    if (currentRoom.board[i][j] == 1)
+                        count1++;
+                    if (currentRoom.board[i][j] == 2)
+                        count2++;
                 }
             }
             String result;
-            if (count1 > count2) result = "WIN:1 win";
-            else if (count2 > count1) result = "WIN:2 win";
-            else result = "WIN:TIE";
+            if (count1 > count2)
+                result = "WIN:1 win";
+            else if (count2 > count1)
+                result = "WIN:2 win";
+            else
+                result = "WIN:TIE";
             for (ClientHandler p : currentRoom.players) {
                 p.out.println(result);
             }
@@ -243,7 +252,8 @@ public class ReversiServer {
                 for (int c = 0; c < 8; c++) {
                     if (board[r][c] == 0) {
                         List<int[]> flips = getFlippablePieces(r, c, player, board);
-                        if (!flips.isEmpty()) return true;
+                        if (!flips.isEmpty())
+                            return true;
                     }
                 }
             }
@@ -262,9 +272,11 @@ public class ReversiServer {
                     for (int i = 0; i < 8; i++) {
                         for (int j = 0; j < 8; j++) {
                             sb.append(currentRoom.board[i][j]);
-                            if (j < 7) sb.append(",");
+                            if (j < 7)
+                                sb.append(",");
                         }
-                        if (i < 7) sb.append(";");
+                        if (i < 7)
+                            sb.append(";");
                     }
                     p.out.println("BOARD_STATE:" + sb.toString());
                 }
@@ -283,14 +295,14 @@ public class ReversiServer {
             int opponent = (player == 1) ? 2 : 1;
             List<int[]> flipped = new ArrayList<>();
             int[][] directions = {
-                {-1, 0}, {1, 0}, {0, -1}, {0, 1},
-                {-1, -1}, {-1, 1}, {1, -1}, {1, 1}
+                    { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 },
+                    { -1, -1 }, { -1, 1 }, { 1, -1 }, { 1, 1 }
             };
             for (int[] dir : directions) {
                 int r = row + dir[0], c = col + dir[1];
                 List<int[]> potential = new ArrayList<>();
                 while (r >= 0 && r < 8 && c >= 0 && c < 8 && board[r][c] == opponent) {
-                    potential.add(new int[]{r, c});
+                    potential.add(new int[] { r, c });
                     r += dir[0];
                     c += dir[1];
                 }
@@ -302,26 +314,19 @@ public class ReversiServer {
         }
 
         private void handlePlayAgain() {
-            if (currentRoom == null) return;
-            
-            // Kiểm tra xem người chơi đã gửi yêu cầu chơi lại chưa
+            // Nếu người chơi này đã gửi yêu cầu PLAY_AGAIN rồi, bỏ qua
             if ((playerId == 1 && currentRoom.replayPlayer1) ||
                 (playerId == 2 && currentRoom.replayPlayer2)) {
-                return; // Không cần gửi lại nếu đã được đánh dấu
+                return;
             }
-            
-            // Đánh dấu người chơi hiện tại đã gửi yêu cầu chơi lại
-            if (playerId == 1) currentRoom.replayPlayer1 = true;
-            else if (playerId == 2) currentRoom.replayPlayer2 = true;
-            
-            // Gửi thông báo PLAY_AGAIN_REQUEST tới đối thủ
-            for (ClientHandler p : currentRoom.players) {  
-                if (p != this && !((playerId == 1 && currentRoom.replayPlayer2) || (playerId == 2 && currentRoom.replayPlayer1))) {  
-                    p.out.println("PLAY_AGAIN_REQUEST");  
-                }  
-            }            
-            
-            // Nếu cả hai đồng ý, reset bàn cờ và bắt đầu game mới
+        
+            // Đánh dấu người chơi đã gửi yêu cầu PLAY_AGAIN
+            if (playerId == 1)
+                currentRoom.replayPlayer1 = true;
+            else if (playerId == 2)
+                currentRoom.replayPlayer2 = true;
+        
+            // Nếu cả hai đã đồng ý chơi lại, reset bàn cờ và bắt đầu game mới
             if (currentRoom.replayPlayer1 && currentRoom.replayPlayer2) {
                 currentRoom.resetBoard();
                 for (ClientHandler p : currentRoom.players) {
@@ -331,43 +336,51 @@ public class ReversiServer {
                     for (int i = 0; i < 8; i++) {
                         for (int j = 0; j < 8; j++) {
                             sb.append(currentRoom.board[i][j]);
-                            if (j < 7) sb.append(",");
+                            if (j < 7)
+                                sb.append(",");
                         }
-                        if (i < 7) sb.append(";");
+                        if (i < 7)
+                            sb.append(";");
                     }
                     p.out.println("BOARD_STATE:" + sb.toString());
                 }
-                // Reset cờ replay sau khi bắt đầu game mới
+                // Reset lại các cờ khi game mới bắt đầu
                 currentRoom.replayPlayer1 = false;
                 currentRoom.replayPlayer2 = false;
+            
+                }
             }
-        }
-        private void handlePlayAgainReject() {
-            if (currentRoom == null) return;
-        
-            // Gửi thông báo EXIT_TO_MENU cho cả hai người chơi
-            for (ClientHandler p : currentRoom.players) {
-                p.out.println("EXIT_TO_MENU");
-            }
-        
-            // Xóa phòng chơi hiện tại
-            rooms.remove(currentRoom.roomId);
-        }
-        
         
         private void handleExit() {
+            // Trước khi đóng kết nối, đưa người chơi và đối thủ về menu
             if (currentRoom != null) {
-                for (ClientHandler p : currentRoom.players) {
-                    if (p != this) {
-                        p.out.println("WIN:ĐỐI THỦ THOÁT");
+                synchronized (currentRoom) {
+                    returnPlayersToMenu();
+                }
+            }
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        private void handleReturnMenu() {
+            if (currentRoom != null) {
+                synchronized (currentRoom) {
+                    returnPlayersToMenu();
+                    synchronized (rooms) {
+                        rooms.remove(currentRoom.roomId);
                     }
                 }
             }
             try {
                 socket.close();
-            } catch (IOException e) {}
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-
+        
         private void listRooms() {
             synchronized (rooms) {
                 if (rooms.isEmpty()) {
@@ -378,20 +391,36 @@ public class ReversiServer {
                         // Hiển thị roomId và số lượng người chơi (ví dụ: "ROOM1(1)")
                         sb.append(room.roomId).append("(").append(room.players.size()).append("),");
                     }
-                    if (sb.length() > 0) sb.setLength(sb.length() - 1);
+                    if (sb.length() > 0)
+                        sb.setLength(sb.length() - 1);
                     out.println("ROOM_LIST:" + sb.toString());
                 }
             }
         }
 
+        // Phương thức hỗ trợ đưa tất cả các client trong phòng về menu
+        private void returnPlayersToMenu() {
+            if (currentRoom != null) {
+                for (ClientHandler p : currentRoom.players) {
+                    p.out.println("EXIT_TO_MENU");
+                }
+            }
+        }
+        
         private void cleanup() {
             if (currentRoom != null) {
-                currentRoom.players.remove(this);
-                if (currentRoom.players.size() == 1) {
-                    currentRoom.players.get(0).out.println("WIN:ĐỐI THỦ THOÁT");
-                }
-                if (currentRoom.players.isEmpty()) {
-                    rooms.remove(currentRoom.roomId);
+                synchronized (currentRoom) {
+                    currentRoom.players.remove(this);
+                    if (currentRoom.players.size() == 1) {
+                        // Gửi thông báo chiến thắng cho người chơi còn lại
+                        ClientHandler remainingPlayer = currentRoom.players.get(0);
+                        remainingPlayer.out.println("WIN: Opponent disconnected, you win!");
+                    } else if (!currentRoom.players.isEmpty()) {
+                        returnPlayersToMenu();
+                    }
+                    synchronized (rooms) {
+                        rooms.remove(currentRoom.roomId);
+                    }
                 }
             }
             try {
@@ -400,5 +429,6 @@ public class ReversiServer {
                 e.printStackTrace();
             }
         }
+        
     }
 }
