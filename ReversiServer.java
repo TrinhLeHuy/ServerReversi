@@ -3,7 +3,7 @@ import java.net.*;
 import java.util.*;
 
 public class ReversiServer {
-    private static final int PORT = 5000;
+    private static final int PORT = 22;
     private ServerSocket serverSocket;
     // Quản lý các phòng bằng roomId
     private static Map<String, Room> rooms = new HashMap<>();
