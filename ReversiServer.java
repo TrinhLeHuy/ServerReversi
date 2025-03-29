@@ -20,7 +20,7 @@ public class ReversiServer {
     //     } catch (IOException e) {
     //         e.printStackTrace();
     //     }
-    // }
+    }
 
     static class Room {
         String roomId;
