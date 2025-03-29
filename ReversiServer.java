@@ -3,24 +3,24 @@ import java.net.*;
 import java.util.*;
 
 public class ReversiServer {
-    private static final int PORT = 5000;
+    // private static final int PORT = 5000;
     private ServerSocket serverSocket;
     // Quản lý các phòng bằng roomId
     private static Map<String, Room> rooms = new HashMap<>();
     
 
     public static void main(String[] args) {
-        try (ServerSocket serverSocket = new ServerSocket(PORT, 50, InetAddress.getByName("0.0.0.0"))) {
-            System.out.println("Server Reversi chạy trên cổng " + PORT);
-            while (true) {
-                Socket socket = serverSocket.accept();
-                System.out.println("Client kết nối: " + socket);
-                new Thread(new ClientHandler(socket)).start();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+    //     try (ServerSocket serverSocket = new ServerSocket(PORT, 50, InetAddress.getByName("0.0.0.0"))) {
+    //         System.out.println("Server Reversi chạy trên cổng " + PORT);
+    //         while (true) {
+    //             Socket socket = serverSocket.accept();
+    //             System.out.println("Client kết nối: " + socket);
+    //             new Thread(new ClientHandler(socket)).start();
+    //         }
+    //     } catch (IOException e) {
+    //         e.printStackTrace();
+    //     }
+    // }
 
     static class Room {
         String roomId;
