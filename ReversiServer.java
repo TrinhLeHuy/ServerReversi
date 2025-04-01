@@ -31,6 +31,8 @@ public class ReversiServer {
         // Biến cho chức năng PLAY_AGAIN (nếu cần mở rộng)
         boolean replayPlayer1 = false;
         boolean replayPlayer2 = false;
+    
+
 
         Room(String roomId) {
             this.roomId = roomId;
@@ -121,6 +123,7 @@ public class ReversiServer {
                         case "LIST":
                             listRooms();
                             break;
+                            
                         default:
                             out.println("ERROR: LỆNH KHÔNG HỢP LỆ");
                     }
@@ -325,7 +328,6 @@ public class ReversiServer {
                 currentRoom.replayPlayer1 = true;
             else if (playerId == 2)
                 currentRoom.replayPlayer2 = true;
-        
             // Nếu cả hai đã đồng ý chơi lại, reset bàn cờ và bắt đầu game mới
             if (currentRoom.replayPlayer1 && currentRoom.replayPlayer2) {
                 currentRoom.resetBoard();
@@ -368,18 +370,36 @@ public class ReversiServer {
         private void handleReturnMenu() {
             if (currentRoom != null) {
                 synchronized (currentRoom) {
-                    returnPlayersToMenu();
-                    synchronized (rooms) {
-                        rooms.remove(currentRoom.roomId);
+                    // Gửi thông báo "EXIT_TO_MENU" cho đối thủ để họ thoát về menu
+                    for (ClientHandler player : currentRoom.players) {
+                        if (player != this) {
+                            player.out.println("EXIT_TO_MENU");
+                        }
+                    }
+                    handleExit();
+                    
+                    // Xóa người chơi hiện tại khỏi danh sách phòng
+                    currentRoom.players.remove(this);
+                    
+                    // Nếu phòng trống sau khi xóa, xoá phòng khỏi danh sách rooms
+                    if (currentRoom.players.isEmpty()) {
+                        synchronized (rooms) {
+                            rooms.remove(currentRoom.roomId);
+                        }
                     }
                 }
             }
+            
+            // Đóng kết nối socket của người chơi
             try {
                 socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+        
+        
+        
         
         private void listRooms() {
             synchronized (rooms) {
